@@ -100,7 +100,7 @@ This report documents the complete DevOps implementation for containerizing and 
 
 - ✅ **CI/CD Pipeline** **With bonus task** 5 stages(Build, Test, Security Scan, Docker Build, Deploy) (time stamped images)
 
-![CI/CD pipeline](screenshots/CID.jpg)
+![CI/CD pipeline](screenshots/CID.png)
 *Proof of CI\CD pipeline running*
 
 - ✅ **Secret Management** using environment variables (No hardcoded passwords)
