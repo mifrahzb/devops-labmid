@@ -271,7 +271,8 @@ jobs:
           echo "=========================================="
           docker images petclinic-app
           echo ""
-          docker inspect petclinic-app:latest --format='Size: {{.Size}} bytes ({{div .Size 1048576}} MB)'
+          echo "Image Details:"
+          docker inspect petclinic-app:latest --format='Size: {{.Size}} bytes'
           docker inspect petclinic-app:latest --format='Created: {{.Created}}'
           docker inspect petclinic-app:latest --format='Architecture: {{.Architecture}}'
           echo "=========================================="
