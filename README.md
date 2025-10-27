@@ -60,13 +60,9 @@ devops-labmid/
 
 ## Technologies Used
 Backend: Spring Boot 4.0.0-M3, Java 21
-
 Database: PostgreSQL 15
-
-Containerization: Docker, Docker Compose
-
+Containerization: Docker, Docker Compose, DockerHub
 CI/CD: GitHub Actions
-
 Security: Environment-based secret management
 
 
