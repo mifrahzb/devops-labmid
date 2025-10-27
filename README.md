@@ -32,10 +32,10 @@ https://github.com/spring-projects/spring-petclinic
    git clone https://github.com/mifrahzb/devops-labmid.git
    cd devops-labmid
 
-2.  # Edit .env with your configuration
+2.  #### Edit .env with your configuration
     cp .env.example .env
 
-3.  docker-compose up
+3.  **docker-compose up**
 
 
 ## Access the application
