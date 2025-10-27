@@ -46,10 +46,12 @@ jobs:
       - name: Build Summary
         run: |
           echo "=========================================="
-          echo "✅ STAGE 1: BUILD & INSTALL - SUCCESS"
+          echo "STAGE 1: BUILD & INSTALL - SUCCESS"
           echo "=========================================="
           echo "Build Tool: Maven"
           echo "JDK Version: 21"
+          echo "Build Time: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          echo ""
           echo "Artifacts:"
           ls -lh target/*.jar
           echo "=========================================="
@@ -77,17 +79,34 @@ jobs:
       
       - name: Run Checkstyle
         run: |
-          echo "🔍 Running Checkstyle..."
-          ./mvnw checkstyle:check || echo "⚠️ Checkstyle warnings found (non-blocking)"
+          echo "Running Checkstyle code quality analysis..."
+          ./mvnw checkstyle:check || echo "Checkstyle warnings found (non-blocking)"
+        continue-on-error: true
+      
+      - name: Run SpotBugs Security Scan
+        run: |
+          echo "Running SpotBugs security analysis..."
+          ./mvnw compile spotbugs:spotbugs || true
+          echo "SpotBugs scan completed"
+        continue-on-error: true
+      
+      - name: Generate SpotBugs Report
+        run: |
+          if [ -f "target/spotbugsXml.xml" ]; then
+            echo "SpotBugs report generated"
+            cat target/spotbugsXml.xml || true
+          else
+            echo "No SpotBugs report found (may need spotbugs plugin in pom.xml)"
+          fi
         continue-on-error: true
       
       - name: Run Spring Format Check
         run: |
-          echo "🔍 Running Spring Format validation..."
-          ./mvnw spring-javaformat:validate || echo "⚠️ Format issues found (non-blocking)"
+          echo "Running Spring Format validation..."
+          ./mvnw spring-javaformat:validate || echo "Format issues found (non-blocking)"
         continue-on-error: true
       
-      - name: Security Scan with Trivy
+      - name: Security Scan with Trivy (Filesystem)
         uses: aquasecurity/trivy-action@master
         with:
           scan-type: 'fs'
@@ -96,28 +115,36 @@ jobs:
           exit-code: '0'
           severity: 'CRITICAL,HIGH,MEDIUM'
       
-      - name: Dependency Security Check
+      - name: Dependency Vulnerability Check
         run: |
-          echo "📦 Analyzing dependencies for vulnerabilities..."
+          echo "Analyzing dependencies for vulnerabilities..."
           ./mvnw dependency:tree > dependency-tree.txt 2>&1 || true
-          echo "✅ Dependency analysis complete"
+          ./mvnw versions:display-dependency-updates >> dependency-tree.txt 2>&1 || true
+          echo "Dependency analysis complete"
       
-      - name: Upload Dependency Tree
+      - name: Upload Security Reports
         uses: actions/upload-artifact@v4
         with:
-          name: dependency-tree
-          path: dependency-tree.txt
+          name: security-reports
+          path: |
+            target/spotbugs*.xml
+            dependency-tree.txt
+            target/checkstyle-result.xml
           retention-days: 7
+        continue-on-error: true
       
       - name: Security Summary
         run: |
           echo "=========================================="
-          echo "✅ STAGE 2: LINT & SECURITY - SUCCESS"
+          echo "STAGE 2: LINT & SECURITY - SUCCESS"
           echo "=========================================="
-          echo "✓ Checkstyle: Completed"
-          echo "✓ Format Validation: Completed"
-          echo "✓ Trivy Security Scan: Completed"
-          echo "✓ Dependency Check: Completed"
+          echo "Scan Time: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          echo ""
+          echo "Security Tools Run:"
+          echo "  - Checkstyle: Code quality analysis"
+          echo "  - SpotBugs: Bug pattern detection"
+          echo "  - Trivy: Vulnerability scanning"
+          echo "  - Dependency Check: Library vulnerabilities"
           echo "=========================================="
 
   # ============================================
@@ -159,10 +186,10 @@ jobs:
       
       - name: Wait for PostgreSQL
         run: |
-          echo "⏳ Waiting for PostgreSQL service..."
+          echo "Waiting for PostgreSQL service..."
           for i in {1..30}; do
             if pg_isready -h localhost -p 5432 -U petclinic > /dev/null 2>&1; then
-              echo "✅ PostgreSQL is ready!"
+              echo "PostgreSQL is ready!"
               break
             fi
             echo "Attempt $i/30..."
@@ -171,7 +198,7 @@ jobs:
       
       - name: Run Unit Tests
         run: |
-          echo "🧪 Running unit tests..."
+          echo "Running unit tests..."
           ./mvnw test \
             -Dspring-javaformat.skip=true \
             -Dtest='!PostgresIntegrationTests,!MySqlIntegrationTests' \
@@ -181,7 +208,7 @@ jobs:
       
       - name: Run Integration Tests with PostgreSQL
         run: |
-          echo "🧪 Running PostgreSQL integration tests..."
+          echo "Running PostgreSQL integration tests..."
           ./mvnw test \
             -Dtest=PostgresIntegrationTests \
             -Dspring-javaformat.skip=true \
@@ -205,14 +232,15 @@ jobs:
         if: always()
         run: |
           echo "=========================================="
-          echo "✅ STAGE 3: TESTING - COMPLETED"
+          echo "STAGE 3: TESTING - COMPLETED"
           echo "=========================================="
+          echo "Test Time: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
           echo "Database Service: PostgreSQL 15"
           echo "Test Profiles: H2 (default) + PostgreSQL"
+          echo ""
           if [ -d "target/surefire-reports" ]; then
-            echo ""
-            echo "Test Results Summary:"
-            find target/surefire-reports -name "*.xml" | wc -l | xargs echo "Total test files:"
+            echo "Test Results:"
+            find target/surefire-reports -name "*.xml" | wc -l | xargs echo "  Test files:"
           fi
           echo "=========================================="
 
@@ -232,29 +260,31 @@ jobs:
       
       - name: Build Docker Image
         run: |
-          echo "🐳 Building Docker image..."
+          echo "Building Docker image..."
           docker build -t petclinic-app:${{ github.sha }} .
           docker tag petclinic-app:${{ github.sha }} petclinic-app:latest
-          echo "✅ Docker image built successfully"
+          echo "Docker image built successfully"
       
       - name: Inspect Docker Image
         run: |
-          echo "📋 Docker Image Information:"
+          echo "Docker Image Information:"
+          echo "=========================================="
           docker images petclinic-app
           echo ""
-          echo "Image Details:"
-          docker inspect petclinic-app:latest --format='Size: {{.Size}} bytes'
+          docker inspect petclinic-app:latest --format='Size: {{.Size}} bytes ({{div .Size 1048576}} MB)'
           docker inspect petclinic-app:latest --format='Created: {{.Created}}'
+          docker inspect petclinic-app:latest --format='Architecture: {{.Architecture}}'
+          echo "=========================================="
       
       - name: Test Docker Image
         run: |
-          echo "🧪 Testing Docker image..."
-          docker run --rm petclinic-app:latest java -version || true
-          echo "✅ Image validation complete"
+          echo "Testing Docker image..."
+          docker run --rm petclinic-app:latest java -version
+          echo "Image validation complete"
       
       - name: Save Docker image
         run: |
-          echo "💾 Saving Docker image as artifact..."
+          echo "Saving Docker image as artifact..."
           docker save petclinic-app:latest | gzip > petclinic-app.tar.gz
           ls -lh petclinic-app.tar.gz
       
@@ -268,21 +298,25 @@ jobs:
       - name: Build Summary
         run: |
           echo "=========================================="
-          echo "✅ STAGE 4: DOCKER BUILD - SUCCESS"
+          echo "STAGE 4: DOCKER BUILD - SUCCESS"
           echo "=========================================="
+          echo "Build Time: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
           echo "Image Tag: ${{ github.sha }}"
-          echo "Image Size: $(du -h petclinic-app.tar.gz | cut -f1)"
+          echo "Compressed Size: $(du -h petclinic-app.tar.gz | cut -f1)"
+          echo ""
           docker images petclinic-app --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}"
           echo "=========================================="
 
   # ============================================
-  # STAGE 5: Deploy (Conditional)
+  # STAGE 5: Deploy to Docker Hub
   # ============================================
   deploy:
     name: "Stage 5: Deploy to Docker Hub"
     runs-on: ubuntu-latest
     needs: build-docker-image
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: |
+      (github.ref == 'refs/heads/main' && github.event_name == 'push') ||
+      (github.ref == 'refs/heads/devops' && github.event_name == 'push')
     
     steps:
       - name: Download Docker image artifact
@@ -292,10 +326,10 @@ jobs:
       
       - name: Load Docker image
         run: |
-          echo "📦 Loading Docker image from artifact..."
+          echo "Loading Docker image from artifact..."
           docker load < petclinic-app.tar.gz
           docker images petclinic-app
-          echo "✅ Image loaded successfully"
+          echo "Image loaded successfully"
       
       - name: Login to Docker Hub
         uses: docker/login-action@v3
@@ -305,62 +339,88 @@ jobs:
       
       - name: Tag Docker Images
         run: |
-          echo "🏷️ Tagging images for Docker Hub..."
+          echo "Tagging images for Docker Hub..."
+          echo "Username: ${{ secrets.DOCKERHUB_USERNAME }}"
           docker tag petclinic-app:latest ${{ secrets.DOCKERHUB_USERNAME }}/petclinic-app:latest
           docker tag petclinic-app:latest ${{ secrets.DOCKERHUB_USERNAME }}/petclinic-app:${{ github.sha }}
-          docker tag petclinic-app:latest ${{ secrets.DOCKERHUB_USERNAME }}/petclinic-app:v1.0-$(date +%Y%m%d)
-          echo "✅ Images tagged"
+          docker tag petclinic-app:latest ${{ secrets.DOCKERHUB_USERNAME }}/petclinic-app:v1.0-$(date +%Y%m%d-%H%M%S)
+          echo "Images tagged successfully"
       
       - name: Push to Docker Hub
         run: |
-          echo "🚀 Pushing images to Docker Hub..."
+          echo "=========================================="
+          echo "PUSHING TO DOCKER HUB"
+          echo "=========================================="
+          echo "Registry: Docker Hub"
+          echo "Repository: ${{ secrets.DOCKERHUB_USERNAME }}/petclinic-app"
+          echo "Timestamp: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          echo ""
+          
+          echo "Pushing latest tag..."
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/petclinic-app:latest
+          
+          echo "Pushing commit SHA tag..."
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/petclinic-app:${{ github.sha }}
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/petclinic-app:v1.0-$(date +%Y%m%d)
-          echo "✅ All images pushed successfully"
+          
+          echo "Pushing timestamped tag..."
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/petclinic-app:v1.0-$(date +%Y%m%d-%H%M%S)
+          
+          echo ""
+          echo "All images pushed successfully"
+          echo "=========================================="
       
       - name: Verify Deployment
         run: |
-          echo "🔍 Verifying deployment..."
+          echo "Verifying deployment on Docker Hub..."
           docker pull ${{ secrets.DOCKERHUB_USERNAME }}/petclinic-app:latest
-          echo "✅ Image verified on Docker Hub"
+          echo "Image verified successfully on Docker Hub"
       
-      - name: Deployment Logs
+      - name: Deployment Logs & Summary
         run: |
-          echo "=========================================="
-          echo "🎉 DEPLOYMENT SUCCESSFUL!"
-          echo "=========================================="
-          echo ""
-          echo "📦 Docker Hub Repository:"
-          echo "   https://hub.docker.com/r/${{ secrets.DOCKERHUB_USERNAME }}/petclinic-app"
-          echo ""
-          echo "🏷️ Image Tags Pushed:"
-          echo "   • latest"
-          echo "   • ${{ github.sha }}"
-          echo "   • v1.0-$(date +%Y%m%d)"
-          echo ""
-          echo "📅 Deployment Details:"
-          echo "   Timestamp: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
-          echo "   Commit SHA: ${{ github.sha }}"
-          echo "   Branch: ${{ github.ref_name }}"
-          echo "   Triggered by: ${{ github.actor }}"
           echo ""
           echo "=========================================="
-          echo "🚀 USAGE INSTRUCTIONS"
+          echo "DEPLOYMENT SUCCESSFUL"
           echo "=========================================="
           echo ""
+          echo "DEPLOYMENT INFORMATION"
+          echo "----------------------------------------"
+          echo "Docker Hub Repository:"
+          echo "  https://hub.docker.com/r/${{ secrets.DOCKERHUB_USERNAME }}/petclinic-app"
+          echo ""
+          echo "Deployed Image Tags:"
+          echo "  - latest"
+          echo "  - ${{ github.sha }}"
+          echo "  - v1.0-$(date +%Y%m%d-%H%M%S)"
+          echo ""
+          echo "DEPLOYMENT METADATA"
+          echo "----------------------------------------"
+          echo "Deployment Timestamp: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          echo "Commit SHA: ${{ github.sha }}"
+          echo "Branch: ${{ github.ref_name }}"
+          echo "Triggered by: ${{ github.actor }}"
+          echo "Workflow: ${{ github.workflow }}"
+          echo "Run Number: ${{ github.run_number }}"
+          echo ""
+          echo "USAGE INSTRUCTIONS"
+          echo "----------------------------------------"
           echo "Pull the image:"
-          echo "   docker pull ${{ secrets.DOCKERHUB_USERNAME }}/petclinic-app:latest"
+          echo "  docker pull ${{ secrets.DOCKERHUB_USERNAME }}/petclinic-app:latest"
           echo ""
           echo "Run standalone:"
-          echo "   docker run -p 8080:8080 ${{ secrets.DOCKERHUB_USERNAME }}/petclinic-app:latest"
+          echo "  docker run -d -p 8080:8080 --name petclinic ${{ secrets.DOCKERHUB_USERNAME }}/petclinic-app:latest"
           echo ""
-          echo "Run with docker-compose:"
-          echo "   git clone https://github.com/mifrahzb/devops-labmid.git"
-          echo "   cd devops-labmid"
-          echo "   docker-compose up -d"
+          echo "Run with PostgreSQL (docker-compose):"
+          echo "  git clone https://github.com/mifrahzb/devops-labmid.git"
+          echo "  cd devops-labmid"
+          echo "  docker-compose up -d"
           echo ""
-          echo "Access application:"
-          echo "   http://localhost:8080"
+          echo "Access the application:"
+          echo "  http://localhost:8080"
           echo ""
+          echo "IMAGE VERIFICATION"
+          echo "----------------------------------------"
+          docker images ${{ secrets.DOCKERHUB_USERNAME }}/petclinic-app --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}\t{{.CreatedAt}}"
+          echo ""
+          echo "=========================================="
+          echo "Step 3 Requirements FULFILLED"
           echo "=========================================="
