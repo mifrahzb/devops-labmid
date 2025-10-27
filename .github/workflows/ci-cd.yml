@@ -321,16 +321,7 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       
-      - name: Tag Docker Images
-        run: |
-          echo "Tagging images for Docker Hub..."
-          echo "Username: ${{ secrets.DOCKERHUB_USERNAME }}"
-          docker tag petclinic-app:latest ${{ secrets.DOCKERHUB_USERNAME }}/petclinic-app:latest
-          docker tag petclinic-app:latest ${{ secrets.DOCKERHUB_USERNAME }}/petclinic-app:${{ github.sha }}
-          docker tag petclinic-app:latest ${{ secrets.DOCKERHUB_USERNAME }}/petclinic-app:v1.0-$(date +%Y%m%d-%H%M%S)
-          echo "Images tagged successfully"
-      
-      - name: Push to Docker Hub
+      - name: Tag and Push Docker Images
         run: |
           echo "=========================================="
           echo "PUSHING TO DOCKER HUB"
@@ -340,16 +331,28 @@ jobs:
           echo "Timestamp: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
           echo ""
           
+          TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+          
+          echo "Tagging images..."
+          docker tag petclinic-app:latest ${{ secrets.DOCKERHUB_USERNAME }}/petclinic-app:latest
+          docker tag petclinic-app:latest ${{ secrets.DOCKERHUB_USERNAME }}/petclinic-app:${{ github.sha }}
+          docker tag petclinic-app:latest ${{ secrets.DOCKERHUB_USERNAME }}/petclinic-app:v1.0-${TIMESTAMP}
+          
           echo "Pushing latest tag..."
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/petclinic-app:latest
+          echo "Success: latest tag pushed"
+          echo ""
           
           echo "Pushing commit SHA tag..."
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/petclinic-app:${{ github.sha }}
+          echo "Success: ${{ github.sha }} tag pushed"
+          echo ""
           
           echo "Pushing timestamped tag..."
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/petclinic-app:v1.0-$(date +%Y%m%d-%H%M%S)
-          
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/petclinic-app:v1.0-${TIMESTAMP}
+          echo "Success: v1.0-${TIMESTAMP} tag pushed"
           echo ""
+          
           echo "All images pushed successfully"
           echo "=========================================="
       
@@ -361,6 +364,7 @@ jobs:
       
       - name: Deployment Logs & Summary
         run: |
+          TIMESTAMP=$(date +%Y%m%d-%H%M%S)
           echo ""
           echo "=========================================="
           echo "DEPLOYMENT SUCCESSFUL"
@@ -374,7 +378,7 @@ jobs:
           echo "Deployed Image Tags:"
           echo "  - latest"
           echo "  - ${{ github.sha }}"
-          echo "  - v1.0-$(date +%Y%m%d-%H%M%S)"
+          echo "  - v1.0-${TIMESTAMP}"
           echo ""
           echo "DEPLOYMENT METADATA"
           echo "----------------------------------------"
@@ -403,7 +407,7 @@ jobs:
           echo ""
           echo "IMAGE VERIFICATION"
           echo "----------------------------------------"
-          docker images ${{ secrets.DOCKERHUB_USERNAME }}/petclinic-app --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}\t{{.CreatedAt}}"
+          docker images ${{ secrets.DOCKERHUB_USERNAME }}/petclinic-app
           echo ""
           echo "=========================================="
           echo "Step 3 Requirements FULFILLED"
