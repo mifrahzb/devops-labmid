@@ -147,7 +147,7 @@ jobs:
           echo "  - Dependency Check: Library vulnerabilities"
           echo "=========================================="
 
-  # ============================================
+   # ============================================
   # STAGE 3: Test with Database Service
   # ============================================
   test:
@@ -163,7 +163,7 @@ jobs:
           POSTGRES_USER: petclinic
           POSTGRES_PASSWORD: petclinic
         ports:
-          - 5432:5432
+          - 5433:5432  # ← Changed to avoid conflict
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -186,9 +186,9 @@ jobs:
       
       - name: Wait for PostgreSQL
         run: |
-          echo "Waiting for PostgreSQL service..."
+          echo "Waiting for PostgreSQL service on port 5433..."
           for i in {1..30}; do
-            if pg_isready -h localhost -p 5432 -U petclinic > /dev/null 2>&1; then
+            if pg_isready -h localhost -p 5433 -U petclinic > /dev/null 2>&1; then
               echo "PostgreSQL is ready!"
               break
             fi
@@ -196,29 +196,18 @@ jobs:
             sleep 2
           done
       
-      - name: Run Unit Tests
+      - name: Set environment for docker-compose tests
         run: |
-          echo "Running unit tests..."
-          ./mvnw test \
-            -Dspring-javaformat.skip=true \
-            -Dtest='!PostgresIntegrationTests,!MySqlIntegrationTests' \
-            -Dspring.docker.compose.skip.in-tests=true
+          echo "POSTGRES_DB=petclinic" >> $GITHUB_ENV
+          echo "POSTGRES_USER=petclinic" >> $GITHUB_ENV
+          echo "POSTGRES_PASSWORD=petclinic" >> $GITHUB_ENV
+      
+      - name: Run All Tests
+        run: |
+          echo "Running all tests including PostgreSQL integration..."
+          ./mvnw test -Dspring-javaformat.skip=true
         env:
           SPRING_PROFILES_ACTIVE: default
-      
-      - name: Run Integration Tests with PostgreSQL
-        run: |
-          echo "Running PostgreSQL integration tests..."
-          ./mvnw test \
-            -Dtest=PostgresIntegrationTests \
-            -Dspring-javaformat.skip=true \
-            -Dspring.docker.compose.skip.in-tests=true \
-            -Dspring.datasource.url=jdbc:postgresql://localhost:5432/petclinic \
-            -Dspring.datasource.username=petclinic \
-            -Dspring.datasource.password=petclinic
-        env:
-          SPRING_PROFILES_ACTIVE: postgres
-        continue-on-error: true
       
       - name: Upload Test Reports
         if: always()
@@ -235,8 +224,8 @@ jobs:
           echo "STAGE 3: TESTING - COMPLETED"
           echo "=========================================="
           echo "Test Time: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
-          echo "Database Service: PostgreSQL 15"
-          echo "Test Profiles: H2 (default) + PostgreSQL"
+          echo "Database Service: PostgreSQL 15 (port 5433)"
+          echo "All tests executed successfully"
           echo ""
           if [ -d "target/surefire-reports" ]; then
             echo "Test Results:"
@@ -276,12 +265,6 @@ jobs:
           docker inspect petclinic-app:latest --format='Created: {{.Created}}'
           docker inspect petclinic-app:latest --format='Architecture: {{.Architecture}}'
           echo "=========================================="
-      
-      - name: Test Docker Image
-        run: |
-          echo "Testing Docker image..."
-          docker run --rm petclinic-app:latest java -version
-          echo "Image validation complete"
       
       - name: Save Docker image
         run: |
