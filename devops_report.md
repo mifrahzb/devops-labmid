@@ -22,8 +22,6 @@ This report documents the complete DevOps implementation for containerizing and 
 
 ### Pipeline Design
 
-#### CI/CD Architecture
-
 ### CI/CD Architecture
 ┌─────────────────────────────────────────────────────────────┐
 │                    GitHub Repository                        │
