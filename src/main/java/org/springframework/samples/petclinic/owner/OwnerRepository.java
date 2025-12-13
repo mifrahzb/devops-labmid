@@ -17,7 +17,8 @@ package org.springframework.samples.petclinic.owner;
 
 import java.util.Optional;
 
-import jakarta.annotation.Nonnull;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -26,7 +27,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
  * Repository class for <code>Owner</code> domain objects. All method names are compliant
  * with Spring Data naming conventions so this interface can easily be extended for Spring
  * Data. See:
- * https://docs.spring.io/spring-data/jpa/docs/current/reference/html/#repositories.query-methods.query-creation
+ * https://docs.spring.io/spring-data/jpa/docs/current/reference/html/#repositories.
+ * query-methods.query-creation
  *
  * @author Ken Krebs
  * @author Juergen Hoeller
@@ -43,6 +45,7 @@ public interface OwnerRepository extends JpaRepository<Owner, Integer> {
 	 * @return a Collection of matching {@link Owner}s (or an empty Collection if none
 	 * found)
 	 */
+	@Cacheable(value = "owners", key = "#lastName")
 	Page<Owner> findByLastNameStartingWith(String lastName, Pageable pageable);
 
 	/**
@@ -58,6 +61,16 @@ public interface OwnerRepository extends JpaRepository<Owner, Integer> {
 	 * @throws IllegalArgumentException if the id is null (assuming null is not a valid
 	 * input for id)
 	 */
+	@Cacheable(value = "owners", key = "#id")
 	Optional<Owner> findById(Integer id);
+
+	/**
+	 * Save an {@link Owner} to the data store. Evicts all owner cache entries.
+	 * @param owner the owner to save
+	 * @return the saved owner
+	 */
+	@Override
+	@CacheEvict(value = "owners", allEntries = true)
+	<S extends Owner> S save(S owner);
 
 }
