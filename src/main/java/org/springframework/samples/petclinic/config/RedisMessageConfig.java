@@ -22,6 +22,7 @@ import org.springframework.data.redis.listener. ChannelTopic;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 import org. springframework.data.redis.listener. adapter.MessageListenerAdapter;
 import org.springframework.samples.petclinic.service. RedisMessageSubscriber;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 
 /**
  * Redis message queue configuration.
@@ -29,6 +30,7 @@ import org.springframework.samples.petclinic.service. RedisMessageSubscriber;
  * @author PetClinic Team
  */
 @Configuration
+@ConditionalOnProperty(name = "spring.redis.host")
 public class RedisMessageConfig {
 
 	@Bean

@@ -34,6 +34,7 @@ import org.springframework.data.redis.serializer. GenericJackson2JsonRedisSerial
 import org.springframework.data.redis.serializer. RedisSerializationContext;
 import org. springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.data.redis.serializer. StringRedisSerializer;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 
 /**
  * Redis configuration for caching and messaging.
@@ -42,6 +43,7 @@ import org.springframework.data.redis.serializer. StringRedisSerializer;
  */
 @Configuration
 @EnableCaching
+@ConditionalOnProperty(name = "spring.redis.host")
 public class RedisConfig {
 
 	@Bean
