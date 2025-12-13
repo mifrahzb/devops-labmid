@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2025 the original author or authors. 
+ * Copyright 2012-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,12 +27,12 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
-import org.springframework.data.redis. connection.RedisStandaloneConfiguration;
-import org.springframework. data.redis.connection.lettuce.LettuceConnectionFactory;
-import org.springframework.data. redis.core.RedisTemplate;
-import org.springframework.data. redis.serializer.GenericJackson2JsonRedisSerializer;
-import org.springframework.data. redis.serializer.RedisSerializationContext;
-import org.springframework.data. redis.serializer.RedisSerializer;
+import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
+import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
+import org.springframework.data.redis.serializer.RedisSerializationContext;
+import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 /**
@@ -82,10 +82,8 @@ public class RedisConfig {
 	public CacheManager cacheManager(RedisConnectionFactory connectionFactory) {
 		RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig()
 			.entryTtl(Duration.ofMinutes(10))
-			.serializeKeysWith(
-					RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
-			.serializeValuesWith(
-					RedisSerializationContext.SerializationPair.fromSerializer(redisSerializer()))
+			.serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
+			.serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(redisSerializer()))
 			.disableCachingNullValues();
 
 		return RedisCacheManager.builder(connectionFactory).cacheDefaults(config).build();
