@@ -15,13 +15,13 @@
  */
 package org.springframework.samples.petclinic.config;
 
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.data.redis.connection.RedisConnectionFactory;
-import org.springframework.data.redis.listener.ChannelTopic;
+import org.springframework.context. annotation.Bean;
+import org. springframework.context.annotation.Configuration;
+import org.springframework.data. redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.listener. ChannelTopic;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
-import org.springframework.data.redis.listener.adapter.MessageListenerAdapter;
-import org.springframework.samples.petclinic.service.RedisMessageSubscriber;
+import org. springframework.data.redis.listener. adapter.MessageListenerAdapter;
+import org.springframework.samples.petclinic.service. RedisMessageSubscriber;
 
 /**
  * Redis message queue configuration.
