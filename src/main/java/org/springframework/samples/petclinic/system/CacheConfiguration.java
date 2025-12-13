@@ -2,7 +2,7 @@
  * Copyright 2012-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
+ * you may not use this file except in compliance with the License. 
  * You may obtain a copy of the License at
  *
  *      https://www.apache.org/licenses/LICENSE-2.0
@@ -16,17 +16,27 @@
 
 package org.springframework.samples.petclinic.system;
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
 import org.springframework.boot.cache.autoconfigure.JCacheManagerCustomizer;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.redis.cache.RedisCacheConfiguration;
+import org.springframework.data.redis.cache.RedisCacheManager;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data. redis.serializer.GenericJackson2JsonRedisSerializer;
+import org.springframework.data. redis.serializer.RedisSerializationContext;
+import org. springframework.data.redis.serializer.StringRedisSerializer;
 
 import javax.cache.configuration.MutableConfiguration;
+import java.time.Duration;
 
 /**
  * Cache configuration intended for caches providing the JCache API. This configuration
  * creates the used cache for the application and enables statistics that become
- * accessible via JMX.
+ * accessible via JMX. 
  */
 @Configuration(proxyBeanMethods = false)
 @EnableCaching
@@ -35,6 +45,30 @@ class CacheConfiguration {
 	@Bean
 	public JCacheManagerCustomizer petclinicCacheConfigurationCustomizer() {
 		return cm -> cm.createCache("vets", cacheConfiguration());
+	}
+
+	@Bean
+	public RedisCacheManager cacheManager(RedisConnectionFactory connectionFactory) {
+		ObjectMapper objectMapper = new ObjectMapper();
+		objectMapper.activateDefaultTyping(
+			BasicPolymorphicTypeValidator. builder()
+				.allowIfBaseType(Object.class)
+				.build(),
+			ObjectMapper.DefaultTyping.NON_FINAL,
+			JsonTypeInfo.As. PROPERTY
+		);
+		
+		GenericJackson2JsonRedisSerializer serializer = new GenericJackson2JsonRedisSerializer(objectMapper);
+
+		RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig()
+			.entryTtl(Duration.ofMinutes(10))
+			.serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
+			.serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(serializer))
+			.disableCachingNullValues();
+
+		return RedisCacheManager.builder(connectionFactory)
+			.cacheDefaults(config)
+			.build();
 	}
 
 	/**
