@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 import org.springframework.samples.petclinic.model.NamedEntity;
 import org.springframework.samples.petclinic.model.Person;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
@@ -32,6 +33,7 @@ import jakarta.persistence.ManyToMany;
 import jakarta.persistence.Table;
 import jakarta.xml.bind.annotation.XmlElement;
 import org.jspecify.annotations.Nullable;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 /**
  * Simple JavaBean domain object representing a veterinarian.
@@ -43,11 +45,13 @@ import org.jspecify.annotations.Nullable;
  */
 @Entity
 @Table(name = "vets")
+@JsonIgnoreProperties(ignoreUnknown = true, value = {"hibernateLazyInitializer", "handler"})
 public class Vet extends Person {
 
 	@ManyToMany(fetch = FetchType.EAGER)
 	@JoinTable(name = "vet_specialties", joinColumns = @JoinColumn(name = "vet_id"),
 			inverseJoinColumns = @JoinColumn(name = "specialty_id"))
+	@JsonDeserialize(as = java.util.LinkedHashSet.class)
 	private @Nullable Set<Specialty> specialties;
 
 	protected Set<Specialty> getSpecialtiesInternal() {

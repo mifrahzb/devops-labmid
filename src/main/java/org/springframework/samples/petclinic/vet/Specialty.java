@@ -17,6 +17,7 @@ package org.springframework.samples.petclinic.vet;
 
 import org.springframework.samples.petclinic.model.NamedEntity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 
@@ -27,6 +28,7 @@ import jakarta.persistence.Table;
  */
 @Entity
 @Table(name = "specialties")
+@JsonIgnoreProperties(ignoreUnknown = true, value = {"hibernateLazyInitializer", "handler"})
 public class Specialty extends NamedEntity {
 
 }
