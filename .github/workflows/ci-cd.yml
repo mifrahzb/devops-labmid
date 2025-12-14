@@ -196,7 +196,7 @@ jobs:
       - name: Run All Tests
         run: |
           echo "Running all tests with PostgreSQL and Redis..."
-          ./mvnw test -Dspring. profiles.active=test 
+          ./mvnw test -Dspring.profiles.active=test 
         env:
           SPRING_PROFILES_ACTIVE: default
           SPRING_DATA_REDIS_HOST: localhost
