@@ -277,9 +277,7 @@ jobs:
       - name: Login to Docker Hub
         if: |
           github.event_name == 'push' &&
-          (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/k8') &&
-          secrets.DOCKERHUB_USERNAME != '' &&
-          secrets.DOCKERHUB_TOKEN != ''
+          (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/k8')
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -289,9 +287,7 @@ jobs:
       - name: Tag and Push Docker Images
         if: |
           github.event_name == 'push' &&
-          (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/k8') &&
-          secrets.DOCKERHUB_USERNAME != '' &&
-          secrets.DOCKERHUB_TOKEN != ''
+          (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/k8')
         run: |
           echo "=========================================="
           echo "PUSHING TO DOCKER HUB"
@@ -378,7 +374,6 @@ jobs:
           terraform validate
       
       - name: Terraform Plan (Dry Run)
-        if: secrets.AWS_ACCESS_KEY_ID == '' || secrets.AWS_SECRET_ACCESS_KEY == ''
         run: |
           echo "=========================================="
           echo "TERRAFORM PLAN (DRY RUN MODE)"
@@ -393,9 +388,9 @@ jobs:
           echo "3. Set AWS_SECRET_ACCESS_KEY"
           echo "4. Re-run this workflow"
           echo "=========================================="
+        continue-on-error: true
       
       - name: Terraform Plan (Full)
-        if: secrets.AWS_ACCESS_KEY_ID != '' && secrets.AWS_SECRET_ACCESS_KEY != ''
         run: |
           echo "Running Terraform plan with AWS credentials..."
           terraform plan -out=tfplan
@@ -407,9 +402,7 @@ jobs:
       - name: Terraform Apply (Production Only)
         if: |
           github.ref == 'refs/heads/main' &&
-          github.event_name == 'push' &&
-          secrets.AWS_ACCESS_KEY_ID != '' &&
-          secrets.AWS_SECRET_ACCESS_KEY != ''
+          github.event_name == 'push'
         run: |
           echo "Applying Terraform changes..."
           terraform apply -auto-approve tfplan
