@@ -53,3 +53,5 @@ _site/
 *.tfstate
 *.tfstate.backup
 .terraform.lock.hcl
+
+k8s/service.yaml
