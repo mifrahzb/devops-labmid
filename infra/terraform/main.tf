@@ -67,8 +67,8 @@ resource "aws_security_group" "app_sg" {
 
 # EC2 Instance (Free Tier)
 resource "aws_instance" "app_server" {
-  ami                    = var.ami_id
-  instance_type          = var.instance_type
+  ami                    = "ami-0c2b8ca1dad447f8a"  # Amazon Linux 2 Free Tier in us-east-1
+  instance_type          = "t3.micro"
   subnet_id              = aws_subnet.public_subnet.id
   vpc_security_group_ids = [aws_security_group.app_sg.id]
 
