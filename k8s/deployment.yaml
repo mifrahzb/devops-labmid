@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: petclinic-app
-  namespace: default
+  namespace: petclinic
   labels:
     app: petclinic
     version: v1
@@ -17,6 +17,7 @@ spec:
         app: petclinic
         version: v1
     spec:
+      restartPolicy: Always
       containers:
       - name: petclinic
         image: petclinic:latest
@@ -48,24 +49,24 @@ spec:
           value: "6379"
         resources:
           requests:
-            cpu: 250m
-            memory: 512Mi
-          limits:
             cpu: 500m
             memory: 1Gi
+          limits:
+            cpu: 1
+            memory: 2Gi
         livenessProbe:
           httpGet:
-            path: /
+            path : /
             port: 8080
-          initialDelaySeconds: 30
+          initialDelaySeconds: 60
           periodSeconds: 10
           timeoutSeconds: 5
-          failureThreshold: 3
+          failureThreshold: 6
         readinessProbe:
           httpGet:
             path: /
             port: 8080
-          initialDelaySeconds: 20
-          periodSeconds: 5
-          timeoutSeconds: 3
-          failureThreshold: 3
+          initialDelaySeconds: 40
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 6

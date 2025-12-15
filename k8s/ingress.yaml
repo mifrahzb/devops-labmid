@@ -2,7 +2,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: petclinic-ingress
-  namespace: default
+  namespace: petclinic
   labels:
     app: petclinic
   annotations:

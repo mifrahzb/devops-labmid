@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: petclinic-config
-  namespace: default
+  namespace: petclinic
   labels:
     app: petclinic
 data:

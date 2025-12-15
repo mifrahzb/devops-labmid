@@ -3,21 +3,19 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: demo-db
-type: servicebinding.io/postgresql
+  namespace: petclinic
+type: Opaque
 stringData:
-  type: "postgresql"
-  provider: "postgresql"
-  host: "demo-db"
-  port: "5432"
-  database: "petclinic"
   username: "user"
   password: "pass"
+  database: "petclinic"
 
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: demo-db
+  namespace: petclinic
 spec:
   ports:
     - port: 5432
@@ -29,6 +27,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: demo-db
+  namespace: petclinic
   labels:
     app: demo-db
 spec:
