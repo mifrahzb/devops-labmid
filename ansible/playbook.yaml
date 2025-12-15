@@ -1,0 +1,89 @@
+---
+- name: Deploy Petclinic Application Locally
+  hosts: localhost
+  connection: local
+  become: yes
+  
+  tasks:
+    - name: Install dependencies
+      apt:
+        name:  
+          - docker.io
+          - python3-pip
+        state:  present
+        update_cache: yes
+
+    - name: Install Docker Python module
+      pip:
+        name:  docker
+        state: present
+
+    - name: Start Docker service
+      shell: service docker start
+      ignore_errors: yes
+
+    - name:  Remove ALL existing containers and networks
+      shell: |
+        docker stop $(docker ps -aq) 2>/dev/null || true
+        docker rm $(docker ps -aq) 2>/dev/null || true
+        docker network rm petclinic-network 2>/dev/null || true
+      ignore_errors: yes
+
+    - name: Pull PostgreSQL image
+      docker_image: 
+        name: postgres:18.0
+        source: pull
+
+    - name: Pull Petclinic image
+      docker_image:
+        name: dsyer/petclinic
+        source:  pull
+
+    - name: Create Docker network
+      docker_network: 
+        name: petclinic-network
+
+    - name: Run PostgreSQL container
+      shell: |
+        docker run -d \
+          --name demo-db \
+          --network petclinic-network \
+          -e POSTGRES_USER=user \
+          -e POSTGRES_PASSWORD=pass \
+          -e POSTGRES_DB=petclinic \
+          -p 5432:5432 \
+          postgres:18.0
+
+    - name: Wait for PostgreSQL
+      wait_for:
+        port: 5432
+        delay:  10
+        timeout: 60
+
+    - name: Run Petclinic container
+      shell: |
+        docker run -d \
+          --name petclinic-app \
+          --network petclinic-network \
+          -e SPRING_PROFILES_ACTIVE=postgres \
+          -e SPRING_DATASOURCE_URL=jdbc:postgresql://demo-db:5432/petclinic \
+          -e SPRING_DATASOURCE_USERNAME=user \
+          -e SPRING_DATASOURCE_PASSWORD=pass \
+          -p 8080:8080 \
+          dsyer/petclinic
+
+    - name: Wait for application
+      wait_for:
+        port: 8080
+        delay:  15
+        timeout: 120
+
+    - name: Show running containers
+      shell: docker ps
+      register: containers
+
+    - name: Display results
+      debug:
+        msg:  
+          - "SUCCESS!  Petclinic is running at http://localhost:8080"
+          - "{{ containers.stdout_lines }}"
