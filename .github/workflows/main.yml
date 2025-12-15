@@ -14,6 +14,11 @@ jobs:
   build-and-test: 
     name: Build & Test
     runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
     steps:
       - name:  Checkout code
         uses: actions/checkout@v4
@@ -28,6 +33,9 @@ jobs:
         run: mvn clean package -DskipTests
 
       - name: Run tests
+        env:
+          SPRING_DATA_REDIS_HOST: localhost
+          SPRING_DATA_REDIS_PORT: 6379
         run: mvn test
 
       - name: Upload artifacts
