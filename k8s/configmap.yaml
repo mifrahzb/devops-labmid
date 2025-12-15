@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: petclinic-config
+  namespace: petclinic
+data:
+  database_url: "jdbc:postgresql://postgres:5432/petclinic"
+  postgres_db: "petclinic"
