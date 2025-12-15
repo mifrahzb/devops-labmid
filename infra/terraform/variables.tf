@@ -13,3 +13,8 @@ variable "subnet_cidr" {
 variable "instance_type" {
   default = "t2.micro"
 }
+
+variable "ami_id" {
+  description = "AMI ID for EC2 instance"
+  default     = "ami-0c2b8ca1dad447f8a"  # Amazon Linux 2 in us-east-1
+}
