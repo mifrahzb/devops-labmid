@@ -53,3 +53,4 @@ _site/
 *.tfstate
 *.tfstate.backup
 .terraform.lock.hcl
+terraform_*.zip
