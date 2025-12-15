@@ -73,6 +73,8 @@ spec:
             - pg_isready -U petclinic
           initialDelaySeconds: 30
           periodSeconds: 10
+          timeoutSeconds: 5        # ADDED: Increased from default 1s
+          failureThreshold: 5      # ADDED: Increased from default 3
         readinessProbe:
           exec:
             command:
@@ -81,6 +83,8 @@ spec:
             - pg_isready -U petclinic
           initialDelaySeconds: 20
           periodSeconds: 5
+          timeoutSeconds: 5        # ADDED: Increased from default 1s
+          failureThreshold: 5      # ADDED: Increased from default 3
   volumeClaimTemplates:
   - metadata:
       name: postgres-storage

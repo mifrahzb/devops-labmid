@@ -32,13 +32,13 @@ spec:
       containers:
       - name: redis
         image: redis:7-alpine
+        command:
+        - redis-server
+        - --appendonly
+        - "yes"
         ports:
         - containerPort: 6379
           name: redis
-        command:
-        - redis-server
-        - "--appendonly"
-        - "yes"
         resources:
           requests:
             cpu: 100m
@@ -56,6 +56,8 @@ spec:
             - ping
           initialDelaySeconds: 30
           periodSeconds: 10
+          timeoutSeconds: 5       # FIXED: Added timeout
+          failureThreshold: 5     # FIXED: Increased threshold
         readinessProbe:
           exec:
             command:
@@ -63,6 +65,8 @@ spec:
             - ping
           initialDelaySeconds: 5
           periodSeconds: 5
+          timeoutSeconds: 5       # FIXED: Added timeout
+          failureThreshold: 3     # Keep at 3 for faster detection
       volumes:
       - name: redis-storage
         emptyDir: {}

@@ -3,10 +3,6 @@ kind: ConfigMap
 metadata:
   name: petclinic-config
   namespace: petclinic
-  labels:
-    app: petclinic
 data:
   database_url: "jdbc:postgresql://postgres:5432/petclinic"
   postgres_db: "petclinic"
-  redis_host: "redis"
-  redis_port: "6379"
