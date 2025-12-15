@@ -1,10 +1,10 @@
 name: DevOps CI/CD Pipeline
 
-#on:
-  #push:
- #   branches: [ main, devops ]
- # pull_request:
- #   branches: [ main ]
+on:
+  push:
+    branches: [ main, develop, k8 ]
+  pull_request:
+    branches: [ main ]
 
 permissions:
   contents: read
@@ -172,7 +172,7 @@ jobs:
       - name: Wait for PostgreSQL
         run: |
           echo "Waiting for PostgreSQL service..."
-          for i in {1.. 30}; do
+          for i in {1..30}; do
             if pg_isready -h localhost -p 5432 -U petclinic > /dev/null 2>&1; then
               echo "PostgreSQL is ready!"
               break
@@ -255,8 +255,8 @@ jobs:
           docker images petclinic-app
           echo ""
           echo "Image Details:"
-          docker inspect petclinic-app: latest --format='Size: {{.Size}} bytes'
-          docker inspect petclinic-app: latest --format='Created: {{.Created}}'
+          docker inspect petclinic-app:latest --format='Size: {{.Size}} bytes'
+          docker inspect petclinic-app:latest --format='Created: {{.Created}}'
           docker inspect petclinic-app:latest --format='Architecture: {{.Architecture}}'
           echo "=========================================="
       
@@ -328,9 +328,9 @@ jobs:
           TIMESTAMP=$(date +%Y%m%d-%H%M%S)
           
           echo "Tagging images..."
-          docker tag petclinic-app:latest ${{ secrets.DOCKERHUB_USERNAME }}/petclinic-app: latest
+          docker tag petclinic-app:latest ${{ secrets.DOCKERHUB_USERNAME }}/petclinic-app:latest
           docker tag petclinic-app:latest ${{ secrets.DOCKERHUB_USERNAME }}/petclinic-app:${{ github.sha }}
-          docker tag petclinic-app: latest ${{ secrets.DOCKERHUB_USERNAME }}/petclinic-app:v1.0-${TIMESTAMP}
+          docker tag petclinic-app:latest ${{ secrets.DOCKERHUB_USERNAME }}/petclinic-app:v1.0-${TIMESTAMP}
           
           echo "Pushing latest tag..."
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/petclinic-app:latest
@@ -338,7 +338,7 @@ jobs:
           echo ""
           
           echo "Pushing commit SHA tag..."
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/petclinic-app: ${{ github.sha }}
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/petclinic-app:${{ github.sha }}
           echo "Success: ${{ github.sha }} tag pushed"
           echo ""
           
