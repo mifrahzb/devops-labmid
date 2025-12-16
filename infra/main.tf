@@ -1,47 +1,27 @@
-# Random ID for S3 bucket
-resource "random_id" "bucket_id" {
-  byte_length = 4
+# Use existing VPC
+data "aws_vpc" "main_vpc" {
+  default = true
 }
 
-# VPC
-resource "aws_vpc" "main_vpc" {
-  cidr_block = "10.0.0.0/16"
-  tags = {
-    Name = "devops-vpc"
+# Use existing subnet
+data "aws_subnet" "public_subnet" {
+  vpc_id            = data.aws_vpc.main_vpc.id
+  default_for_az    = true
+  availability_zone = "us-east-1a"
+}
+
+# Use existing Internet Gateway
+data "aws_internet_gateway" "default" {
+  filter {
+    name   = "attachment.vpc-id"
+    values = [data.aws_vpc. main_vpc.id]
   }
-}
-
-# Internet Gateway
-resource "aws_internet_gateway" "igw" {
-  vpc_id = aws_vpc.main_vpc.id
-}
-
-# Public Subnet
-resource "aws_subnet" "public_subnet" {
-  vpc_id                  = aws_vpc.main_vpc.id
-  cidr_block              = "10.0.1.0/24"
-  map_public_ip_on_launch = true
-}
-
-# Route Table
-resource "aws_route_table" "public_rt" {
-  vpc_id = aws_vpc.main_vpc.id
-
-  route {
-    cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.igw.id
-  }
-}
-
-# Route Table Association
-resource "aws_route_table_association" "rta" {
-  subnet_id      = aws_subnet.public_subnet.id
-  route_table_id = aws_route_table.public_rt.id
 }
 
 # Security Group
 resource "aws_security_group" "app_sg" {
-  vpc_id = aws_vpc.main_vpc.id
+  name   = "devops-app-sg"
+  vpc_id = data.aws_vpc.main_vpc.id
 
   ingress {
     from_port   = 22
@@ -63,13 +43,17 @@ resource "aws_security_group" "app_sg" {
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
+
+  tags = {
+    Name = "devops-sg"
+  }
 }
 
-# EC2 Instance (Free Tier)
+# EC2 Instance
 resource "aws_instance" "app_server" {
-  ami                    = "ami-0c2b8ca1dad447f8a"  # Amazon Linux 2 Free Tier in us-east-1
+  ami                    = "ami-0c2b8ca1dad447f8a"
   instance_type          = "t3.micro"
-  subnet_id              = aws_subnet.public_subnet.id
+  subnet_id              = data. aws_subnet.public_subnet. id
   vpc_security_group_ids = [aws_security_group.app_sg.id]
 
   tags = {
@@ -77,7 +61,16 @@ resource "aws_instance" "app_server" {
   }
 }
 
+# Random ID for S3 bucket
+resource "random_id" "bucket_id" {
+  byte_length = 4
+}
+
 # S3 Bucket
 resource "aws_s3_bucket" "app_bucket" {
-  bucket = "devops-final-${random_id.bucket_id.hex}"
+  bucket = "devops-final-${random_id. bucket_id.hex}"
+  
+  tags = {
+    Name = "devops-bucket"
+  }
 }
